@@ -1,27 +1,14 @@
-import express, { Request, Response } from "express";
-import Movie from "../models/movie";
-import Rental from "../models/rental";
+import express from "express";
 import auth from "../middlewares/auth";
 import validate from "../middlewares/validate";
 import joi from "joi";
+import * as returnController from "../controller/return";
 
 const router = express.Router();
 router.post(
   "/",
   [auth, validate(validateReturn)],
-  async (req: Request, res: Response) => {
-    const rental = await Rental.lookup(req.body.customerId, req.body.movieId);
-    if (!rental) res.status(404).send("rental not found");
-
-    rental.return();
-    await rental.save();
-
-    await Movie.updateOne(
-      { _id: rental.movie._id },
-      { $inc: { numberInStock: 1 } }
-    );
-    return res.send(rental);
-  }
+  returnController.returnMovie
 );
 
 function validateReturn(req: any) {
